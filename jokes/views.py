@@ -1,10 +1,13 @@
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.generic import (
+    CreateView, DeleteView, DetailView, ListView, UpdateView
+)
 from django.urls import reverse_lazy
 
 from .forms import JokeForm
 from .models import Joke
 
-class JokeCreateView(CreateView):
+class JokeCreateView(LoginRequiredMixin, CreateView):
     model = Joke
     form_class = JokeForm
 
@@ -12,9 +15,13 @@ class JokeCreateView(CreateView):
         form.instance.user = self.request.user
         return super().form_valid(form)
 
-class JokeDeleteView(DeleteView):
+class JokeDeleteView(UserPassesTestMixin, DeleteView):
     model = Joke
     success_url = reverse_lazy('jokes:list')
+
+    def test_func(self):
+        obj = self.get_object()
+        return self.request.user == obj.user
 
 class JokeDetailView(DetailView):
     model = Joke
@@ -23,6 +30,10 @@ class JokeListView(ListView):
     model = Joke
 
 
-class JokeUpdateView(UpdateView):
+class JokeUpdateView(UserPassesTestMixin, UpdateView):
     model = Joke
     form_class = JokeForm
+
+    def test_func(self):
+        obj = self.get_object()
+        return self.request.user == obj.user
